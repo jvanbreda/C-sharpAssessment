@@ -10,19 +10,17 @@ namespace ConsoleApp
 {
     public class ApiService
     {
-        private string BaseUrl { get { return ConfigurationManager.AppSettings["baseUrl"]; } }
-        private string ApiKey { get { return ConfigurationManager.AppSettings["apiKey"]; } }
+        private string BaseUrl { get { return "https://api-dev.channelengine.net/api/v2/"; } }
 
-        public JObject GetOrdersWithStatus(string[] statuses)
+        public JObject GetOrdersWithStatus(string[] statuses, string apiKey)
         {
-            var uri = BuildUri(RequestType.orders, statuses);
-            return JObject.Parse(Get(uri));
-            
+            var uri = BuildUri(RequestType.orders, statuses, apiKey);
+            return JObject.Parse(Get(uri));            
         }
 
-        public JObject GetProductWithEan(string[] eans)
+        public JObject GetProductWithMerchantProductNo(string[] merchantProductNoList, string apiKey)
         {
-            var uri = BuildUri(RequestType.products, eans);
+            var uri = BuildUri(RequestType.products, merchantProductNoList, apiKey);
             return JObject.Parse(Get(uri));
         }
 
@@ -58,11 +56,12 @@ namespace ConsoleApp
                 Console.WriteLine($"{DateTime.Now} - Exception occurred: {e.Message}");
             }
 
+            Console.WriteLine($"{DateTime.Now} - Succeeded getting data from {uri}");
             return result;
         }
         
 
-        private Uri BuildUri(RequestType type, string[] filters)
+        private Uri BuildUri(RequestType type, string[] filters, string apiKey)
         {
             string query = string.Empty;
 
@@ -77,12 +76,12 @@ namespace ConsoleApp
                 case RequestType.products:
                     foreach (var filter in filters)
                     {
-                        query += $"eanList={filter}&";
+                        query += $"merchantProductNoList={filter}&";
                     }
                     break;
             }
 
-            query += $"apikey={ApiKey}";
+            query += $"apikey={apiKey}";
 
             var requestUri = Path.Combine(BaseUrl, type.ToString(), "?" + query);
 
