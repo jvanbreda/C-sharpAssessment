@@ -19,6 +19,7 @@ namespace WebApp.Controllers
         private readonly IConfiguration Configuration;
 
         private readonly string _apiKey;
+        private IList<ViewModel> viewModels = new List<ViewModel>();
 
         public AssessmentController(ApiService apiService, IConfiguration configuration)
         {
@@ -47,7 +48,7 @@ namespace WebApp.Controllers
 
             var productList = GetProducts(merchantProductNoList);
 
-            return View();
+            return View(viewModels.OrderByDescending(x => x.QuantitySold).Take(5).ToList());
         }
 
         private IList<OrderModel> GetOrders()
@@ -69,6 +70,21 @@ namespace WebApp.Controllers
                     orderLineModel.MerchantProductNo = orderLine["MerchantProductNo"].ToString();
                     orderLineModel.Quantity = int.Parse(orderLine["Quantity"].ToString());
                     orderModel.Lines.Add(orderLineModel);
+
+                    if(!viewModels.Any(x => x.MerchantProductNo == orderLineModel.MerchantProductNo))
+                    {
+                        viewModels.Add(new ViewModel()
+                        {
+                            Ean = orderLineModel.Gtin,
+                            MerchantProductNo = orderLineModel.MerchantProductNo,
+                            QuantitySold = orderLineModel.Quantity
+                        });
+                    }
+                    else
+                    {
+                        viewModels.Where(x => x.MerchantProductNo == orderLineModel.MerchantProductNo)
+                            .First().QuantitySold += orderLineModel.Quantity;
+                    }
                 }
 
                 orderList.Add(orderModel);
@@ -91,6 +107,8 @@ namespace WebApp.Controllers
                 productModel.MerchantProductNo = product["MerchantProductNo"].ToString();
 
                 productList.Add(productModel);
+
+                viewModels.Where(x => x.MerchantProductNo == productModel.MerchantProductNo).First().ProductName = productModel.Name;
             }
 
             return productList;

@@ -1,9 +1,5 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-
-}
+﻿@using WebApp.Models
+@model List<ViewModel>
 
 <style>
     table {
@@ -24,12 +20,12 @@
         <th>quantity</th>
     </tr>
 
-    @for(int i = 1; i <= 5; i++)
+    @for(int i = 0; i < Model.Count(); i++)
     {
     <tr>
-        <td>Product @i</td>
-        <td>@i</td>
-        <td>@i</td>
+        <td>@Model[i].ProductName</td>
+        <td>@Model[i].Ean</td>
+        <td>@Model[i].QuantitySold</td>
 
     </tr>
     }
