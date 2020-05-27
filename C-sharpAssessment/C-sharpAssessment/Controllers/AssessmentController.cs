@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 
 using ConsoleApp;
 using WebApp.Models;
+using WebApp.Utilities;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -48,7 +49,7 @@ namespace WebApp.Controllers
 
             var productList = GetProducts(merchantProductNoList);
 
-            return View(viewModels.OrderByDescending(x => x.QuantitySold).Take(5).ToList());
+            return View(ListMethods.GetTop5Products(viewModels));
         }
 
         private IList<OrderModel> GetOrders()
@@ -71,20 +72,9 @@ namespace WebApp.Controllers
                     orderLineModel.Quantity = int.Parse(orderLine["Quantity"].ToString());
                     orderModel.Lines.Add(orderLineModel);
 
-                    if(!viewModels.Any(x => x.MerchantProductNo == orderLineModel.MerchantProductNo))
-                    {
-                        viewModels.Add(new ViewModel()
-                        {
-                            Ean = orderLineModel.Gtin,
-                            MerchantProductNo = orderLineModel.MerchantProductNo,
-                            QuantitySold = orderLineModel.Quantity
-                        });
-                    }
-                    else
-                    {
-                        viewModels.Where(x => x.MerchantProductNo == orderLineModel.MerchantProductNo)
-                            .First().QuantitySold += orderLineModel.Quantity;
-                    }
+                    // While we are busy processing orders and orderlines, count the products sold, so we won't have to traverse
+                    // the orderlist again somewhere else
+                    SetQuantitySold(orderLineModel);                    
                 }
 
                 orderList.Add(orderModel);
@@ -108,10 +98,32 @@ namespace WebApp.Controllers
 
                 productList.Add(productModel);
 
+                // Complete the viewmodel with the product name so it can be displayed
                 viewModels.Where(x => x.MerchantProductNo == productModel.MerchantProductNo).First().ProductName = productModel.Name;
             }
 
             return productList;
+        }
+
+        /// <summary>
+        /// Method which counts the quantity of the items sold and appends them to the viewModelList 
+        /// </summary>
+        private void SetQuantitySold(OrderLine orderLineModel)
+        {
+            if (!viewModels.Any(x => x.MerchantProductNo == orderLineModel.MerchantProductNo))
+            {
+                viewModels.Add(new ViewModel()
+                {
+                    Ean = orderLineModel.Gtin,
+                    MerchantProductNo = orderLineModel.MerchantProductNo,
+                    QuantitySold = orderLineModel.Quantity
+                });
+            }
+            else
+            {
+                viewModels.Where(x => x.MerchantProductNo == orderLineModel.MerchantProductNo)
+                    .First().QuantitySold += orderLineModel.Quantity;
+            }
         }
     }
 }
